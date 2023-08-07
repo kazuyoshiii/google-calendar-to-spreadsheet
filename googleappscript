@@ -1,0 +1,44 @@
+// Google Apps Script
+function updateSpreadsheetFromCalendar() {
+  // カレンダーとスプレッドシートのIDを設定
+  var calendarId = 'YOUR_EMAIL_ADDRESS';
+  var spreadsheetId = 'YOUR_SPREADSHEET_ID';
+
+  // 除外するキーワードを設定
+  var excludeKeywords = ['KEYWORD1', 'KEYWORD2', 'KEYWORD3'];
+
+  // 指定された日付のイベントを取得
+  var calendar = CalendarApp.getCalendarById(calendarId);
+  var startDate = new Date(2023, 0, 1); // 月は0から始まるため、1月は0となります。
+  var endDate = new Date(2023, 11, 31); // 2023年末まで
+  var events = calendar.getEvents(startDate, endDate);
+
+  // スプレッドシートを開き、シートを取得
+  var spreadsheet = SpreadsheetApp.openById(spreadsheetId);
+  var sheet = spreadsheet.getSheets()[0];
+
+  // シートの内容をクリア
+  sheet.clear();
+
+  // ヘッダーを設定
+  sheet.appendRow(['Event ID', 'Month', 'Title', 'Start Date', 'End Date', 'Duration (hours)', 'Description']);
+
+  // 各イベントに対して
+  for (var i = 0; i < events.length; i++) {
+    var event = events[i];
+    var title = event.getTitle();
+    var eventId = event.getId();
+
+    // イベントのタイトルが除外キーワードを含まない場合
+    if (!excludeKeywords.some(keyword => title.includes(keyword))) {
+      // 開始時間と終了時間から所要時間を計算（ミリ秒単位での差を時間単位に変換）
+      var duration = (event.getEndTime().getTime() - event.getStartTime().getTime()) / (1000 * 60 * 60);
+
+      // 開始日から月を取得
+      var month = event.getStartTime().getMonth() + 1; // getMonth()は0から始まるため、1を足す
+
+      // イベントの詳細をスプレッドシートに追加
+      sheet.appendRow([eventId, `2023年${month}月`, title, event.getStartTime(), event.getEndTime(), duration, event.getDescription()]);
+    }
+  }
+}
